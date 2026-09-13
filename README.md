@@ -1,39 +1,138 @@
-# SoC-IP Platform — Shallow DMA Streaming Engine
+# SoC-IP Platform — High-Throughput Data Streaming Engine
 
-This version is intentionally kept shallow for functional simulation.
+A modular RTL-based SoC IP platform implementing a configurable data streaming engine with AXI4-Stream interfaces, DMA-based data movement, buffering, memory access, and synthesis/physical-design support.
 
-Main path:
+The project is developed with a hardware-first methodology, progressing from synthesizable RTL and functional simulation to logic synthesis and ASIC physical implementation using an OpenLane/SKY130-based flow.
 
-Descriptor Manager -> DMA Read -> AXI-Stream Register Slice -> DMA Write -> Destination RAM
+---
 
-## Run the main simulation
+## Overview
 
-From the project root:
+The **SoC-IP Platform** is a reusable digital hardware subsystem designed around a high-throughput data movement and streaming architecture.
 
-```bash
-chmod +x run_sim.sh
-./run_sim.sh
-```
+The central component is a **Data Streaming Engine** that connects memory-oriented DMA functionality with streaming data paths. The design is decomposed into independent RTL modules for:
 
-Or manually:
+- AXI4-Stream data transport
+- Stream arbitration
+- Stream broadcasting
+- Stream switching
+- Stream buffering
+- Register slicing
+- DMA address generation
+- DMA descriptor management
+- DMA read operations
+- DMA write operations
+- Synchronous FIFO buffering
+- Single-port RAM access
 
-```bash
-mkdir -p sim
-iverilog -g2012 -s tb_data_streaming_engine -o sim/data_streaming_engine.vvp $(cat rtl_files.f) tb/tb_data_streaming_engine.v
-vvp sim/data_streaming_engine.vvp
-```
+The architecture is intentionally modular so that individual components can be verified, synthesized, optimized, and reused independently.
 
-The testbench transfers eight 32-bit words (32 bytes) from source RAM address `0x100` to destination RAM address `0x200`, then checks every destination word.
+The repository also contains simulation testbenches, synthesis scripts, generated synthesis artifacts, and an OpenLane configuration for ASIC-oriented implementation.
 
-A VCD named `tb_data_streaming_engine.vcd` is generated in the project root.
+---
 
-## Fixes in this version
+## Key Features
 
-- `dma_descriptor_manager.v`: `descriptor_valid_out` is combinationally gated by `!descriptor_clear`. This prevents a one-cycle window after `transfer_active` drops (while the registered valid is still high) from re-asserting `start_transfer` and starting a second unwanted DMA.
-- `data_streaming_engine.v`: RAM address muxes include `start_transfer` so the source/destination RAMs see the DMA address on the same cycle the engines present it (eliminates a 1-cycle mux lag).
-- `dma_read_engine.v`: synchronous RAM read latency is handled explicitly (WAIT1/WAIT2).
-- `dma_write_engine.v`: AXI-Stream handshake directly controls the RAM write.
-- All internal nets declared before module instances.
-- Testbench and file list cleaned for Icarus Verilog.
+### Streaming Infrastructure
 
-The arbiter, broadcaster, switch and AXI FIFO remain as independent building blocks; they are not forced into the shallow DMA datapath yet.
+- AXI4-Stream compatible data-path components
+- Stream arbitration
+- Stream broadcasting
+- Stream switching
+- Register slicing for pipeline timing and throughput improvement
+- FIFO-based buffering
+- Modular streaming datapath architecture
+
+### DMA Subsystem
+
+- DMA address generation
+- DMA descriptor management
+- DMA read engine
+- DMA write engine
+- Memory-to-stream and stream-to-memory data movement architecture
+- Decoupled control and data-path organization
+
+### Memory Subsystem
+
+- Synchronous FIFO implementation
+- Single-port RAM implementation
+- Memory access abstraction for the streaming engine
+- Buffering between memory and streaming interfaces
+
+### Verification
+
+- Dedicated RTL testbenches
+- FIFO verification
+- RAM verification
+- Data streaming engine verification
+- File-list based simulation flow
+- Functional simulation support
+
+### Synthesis
+
+- Yosys synthesis flow
+- Synthesized RTL/netlist output
+- Dedicated synthesis scripts
+- RTL-to-gate-level design progression
+
+### ASIC Implementation
+
+- OpenLane-based physical implementation
+- SKY130-oriented configuration
+- ASIC synthesis and implementation flow
+- Physical-design collateral generated through OpenLane
+
+---
+
+# Architecture
+
+The overall architecture can be viewed as a layered data-movement system:
+
+```text
+                         +----------------------+
+                         |   Control / Config   |
+                         |     Interface        |
+                         +----------+-----------+
+                                    |
+                                    v
+                     +----------------------------+
+                     |    DMA Descriptor Manager  |
+                     +-------------+--------------+
+                                   |
+                                   v
+                     +----------------------------+
+                     |    DMA Address Generator   |
+                     +-------------+--------------+
+                                   |
+                    +--------------+--------------+
+                    |                             |
+                    v                             v
+          +-------------------+         +-------------------+
+          |   DMA Read Engine |         |  DMA Write Engine |
+          +---------+---------+         +---------+---------+
+                    |                             ^
+                    |                             |
+                    v                             |
+             +------------+                 +------------+
+             |   Memory   |                 |   Memory   |
+             |   / RAM    |                 | Interface  |
+             +------+-----+                 +------+-----+
+                    |                              ^
+                    |                              |
+                    v                              |
+          +-----------------------------------------------+
+          |              AXI-Stream Data Path             |
+          |                                               |
+          |  +--------+   +---------+   +-------------+  |
+          |  | Arbiter|-->| Switch  |-->| Register    |  |
+          |  +--------+   +---------+   | Slice       |  |
+          |                              +-------------+  |
+          |                                      |       |
+          |                              +-------v-----+ |
+          |                              | Stream FIFO | |
+          |                              +-------------+ |
+          |                                      |       |
+          |                              +-------v-----+ |
+          |                              | Broadcaster | |
+          |                              +-------------+ |
+          +-----------------------------------------------+
