@@ -1,0 +1,12 @@
+rtl/bus/axi_stream_arbiter.v
+rtl/bus/axi_stream_broadcaster.v
+rtl/bus/axi_stream_fifo.v
+rtl/bus/axi_stream_register_slice.v
+rtl/bus/axi_stream_switch.v
+rtl/dma/dma_address_generator.v
+rtl/dma/dma_descriptor_manager.v
+rtl/dma/dma_read_engine.v
+rtl/dma/dma_write_engine.v
+rtl/memory/fifo_sync.v
+rtl/memory/ram_sp.v
+rtl/data_streaming_engine.v
