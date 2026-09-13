@@ -1,0 +1,24 @@
+read_verilog -sv rtl/memory/fifo_sync.v
+read_verilog -sv rtl/memory/ram_sp.v
+
+read_verilog -sv rtl/bus/axi_stream_register_slice.v
+read_verilog -sv rtl/bus/axi_stream_broadcaster.v
+read_verilog -sv rtl/bus/axi_stream_switch.v
+read_verilog -sv rtl/bus/axi_stream_arbiter.v
+read_verilog -sv rtl/bus/axi_stream_fifo.v
+
+read_verilog -sv rtl/dma/dma_read_engine.v
+read_verilog -sv rtl/dma/dma_write_engine.v
+read_verilog -sv rtl/dma/dma_descriptor_manager.v
+read_verilog -sv rtl/dma/dma_address_generator.v
+
+read_verilog -sv rtl/data_streaming_engine.v
+
+hierarchy -check -top data_streaming_engine
+
+proc
+opt
+memory
+opt
+
+stat
